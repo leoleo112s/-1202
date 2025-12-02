@@ -3,6 +3,7 @@ import { ApiConfig, RealTimeResponse, LlmConfig } from '../types';
 import { downsampleBuffer, floatTo16BitPCM } from '../utils/audioUtils';
 import { callLlmApi } from '../utils/llmApi';
 import { Mic, MicOff, Activity, Bot, Send } from 'lucide-react';
+import { config as appConfig } from '../config';
 
 interface RealTimeASRProps {
   config: ApiConfig;
@@ -164,25 +165,23 @@ export const RealTimeASR: React.FC<RealTimeASRProps> = ({ config, llmConfig }) =
   };
 
   const connectWebSocket = () => {
-    const voiceId = generateVoiceId();
-    // 2.1.2 构造 URL 参数
-    // 注意：文档要求 Header Cookie: SESSION=...，但浏览器 WS 不支持自定义 Header。
-    // 通常这里只能依赖浏览器自动携带 Cookie，或者尝试在 URL 中携带 sessionId (取决于服务端实现)。
-    // 这里我们仅按照文档构造 URL query params。
+    // 连接到本地后端的 WebSocket 服务
+    // 将 ASR 配置作为查询参数传递给后端
     const params = new URLSearchParams({
-        voice_id: voiceId,
-        voice_format: '1', // PCM
-        needvad: '1',      // 开启 VAD
-        result_text_format: '0' // UTF-8
+        serverIp: config.serverIp,
+        loginPort: config.loginPort,
+        servicePort: config.servicePort,
+        username: config.username,
+        password: config.password
     });
 
-    const wsUrl = `ws://${config.serverIp}:${config.servicePort}/websocket/realtime_asr_ws_private?${params.toString()}`;
-    
+    const wsUrl = `${appConfig.wsUrl}/asr?${params.toString()}`;
+
     try {
-      addLog(`连接中: ${wsUrl}`);
+      addLog(`连接本地后端 WebSocket...`);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
-      ws.binaryType = 'arraybuffer'; // 接收可能也是二进制？文档说响应结果为 JSON 序列化字符串。
+      ws.binaryType = 'arraybuffer';
 
       ws.onopen = () => {
         addLog('WebSocket 已连接，等待握手响应...');

@@ -1,0 +1,54 @@
+# 依赖
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# 构建输出
+dist/
+build/
+client/dist/
+server/dist/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+server/.env
+client/.env
+
+# 日志
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
+
+# 操作系统
+Thumbs.db
+.DS_Store

@@ -3,6 +3,7 @@ import { ApiConfig, LlmConfig, LlmProvider } from './types';
 import { RealTimeASR } from './components/RealTimeASR';
 import { OneSentenceASR } from './components/OneSentenceASR';
 import { Settings, LogIn, LayoutDashboard, Key, AlertCircle, CheckCircle, Bot } from 'lucide-react';
+import { config } from './config';
 
 const App: React.FC = () => {
   // 私有化接口配置
@@ -54,27 +55,21 @@ const App: React.FC = () => {
     }
   };
 
-  // 1.1 登录接口实现
+  // 登录接口实现 - 通过本地后端代理
   const handleLogin = async () => {
     if (!apiConfig.serverIp || !apiConfig.username || !apiConfig.password) {
       setLoginError("请输入 IP、账号和密码");
       return;
     }
-    
+
     setLoginLoading(true);
     setLoginError(null);
     setLoginSuccess(false);
 
     try {
-      const url = `http://${apiConfig.serverIp}:${apiConfig.loginPort}/login`;
-      
-      // 注意：由于浏览器限制，前端无法读取 Set-Cookie 响应头（除非非 HttpOnly）。
-      // 这里的实现假设服务器支持 CORS 并且我们尝试从响应体或其他方式获取，
-      // 如果服务器完全依赖自动 Cookie 管理，则 fetch 会自动处理，但我们需要 SESSION 值用于后续 WebSocket 手动拼接。
-      // 文档中说："取响应头 Set-Cookie 中 SESSION 作为会话id"。
-      // 在浏览器中，fetch 如果配置 credentials: 'include'，浏览器会自动存 Cookie。
-      // 但 WebSocket API 不支持自定义 Cookie 头。通常这类私有接口在浏览器测试需要手动填 Session，或依赖 Query Param 传递 Session。
-      
+      // 调用本地后端的登录接口
+      const url = `${config.apiUrl}/api/login`;
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -82,33 +77,31 @@ const App: React.FC = () => {
         },
         body: JSON.stringify({
             username: apiConfig.username,
-            password: apiConfig.password
+            password: apiConfig.password,
+            serverIp: apiConfig.serverIp,
+            loginPort: apiConfig.loginPort
         })
       });
 
       if (!response.ok) {
-          throw new Error(`Login failed: ${response.status}`);
+          throw new Error(`登录失败: ${response.status}`);
       }
 
-      // 尝试解析响应
       const data = await response.json();
-      
+
       if (data.status === 200) {
           setLoginSuccess(true);
-          // 提示用户：由于浏览器安全限制，无法通过 JS 读取 HttpOnly Cookie。
-          // 如果接口返回的数据包里没有 session，用户可能需要手动去控制台 Application 选项卡复制。
-          // 这里我们做一个假设：如果 data.data 里有 session，自动填充；否则提示用户。
           if (data.data && data.data.session) {
               setApiConfig(prev => ({...prev, sessionId: data.data.session}));
           } else {
-              setLoginError("登录成功，但无法自动读取 Session Cookie。请手动在下方输入（F12 -> Application -> Cookies -> SESSION）");
+              setLoginSuccess(true);
           }
       } else {
           throw new Error(data.msg || "登录失败");
       }
 
     } catch (e: any) {
-      setLoginError(e.message || "连接服务器失败 (检查跨域/网络)");
+      setLoginError(e.message || "连接后端服务失败");
     } finally {
       setLoginLoading(false);
     }
