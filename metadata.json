@@ -1,0 +1,7 @@
+{
+  "name": "AIOS 语音测试平台 (私有化版)",
+  "description": "基于 React 的语音识别测试工具，适配私有化部署接口 (30886/30888端口)，支持实时流式识别与一句话识别。",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
